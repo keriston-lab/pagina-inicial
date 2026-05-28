@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Pessoal</title>
+    <style>
+        :root {
+            --bg-color: #09090b;
+            --card-bg: #141417;
+            --card-border: #27272a;
+            --card-hover-border: #52525b;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent: #ffffff;
+            --danger: #ef4444;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 400;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.25rem;
+            width: 100%;
+        }
+
+        .link-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            height: 76px;
+            overflow: hidden;
+        }
+
+        .link-card:hover {
+            border-color: var(--card-hover-border);
+            transform: translateY(-2px);
+            background-color: #18181c;
+        }
+
+        .icon-wrapper {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .icon-wrapper img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+        }
+
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .link-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 15px;
+        }
+
+        .link-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 0.15rem;
+        }
+
+        .btn-delete {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            display: none;
+            padding: 2px;
+            line-height: 1;
+            z-index: 10;
+            transition: color 0.15s ease;
+        }
+
+        .link-card:hover .btn-delete {
+            display: block;
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+        }
+
+        .add-card {
+            border: 1px dashed var(--card-border);
+            background: transparent;
+            cursor: pointer;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .add-card:hover {
+            border-color: var(--card-hover-border);
+            color: var(--text-main);
+            background: transparent;
+        }
+
+        .add-card svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            padding: 1.75rem;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 0.65rem 0.75rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: border-color 0.15s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--card-hover-border);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--card-hover-border);
+            color: var(--text-main);
+        }
+
+        .btn-submit {
+            background-color: var(--text-main);
+            border: 1px solid var(--text-main);
+            color: var(--bg-color);
+        }
+
+        .btn-submit:hover {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Painel de Navegação</h1>
+        </header>
+        
+        <div class="grid" id="links-grid">
+            <!-- Renderizado dinamicamente via JS -->
+        </div>
+    </div>
+
+    <!-- Modal para adicionar novos links -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2>Adicionar Novo Atalho</h2>
+            <form id="link-form">
+                <div class="form-group">
+                    <label purchasers for="input-name">Nome do Site</label>
+                    <input type="text" id="input-name" required placeholder="Ex: GitHub">
+                </div>
+                <div class="form-group">
+                    <label for="input-url">Endereço (URL)</label>
+                    <input type="text" id="input-url" required placeholder="Ex: https://github.com">
+                </div>
+                <div class="form-group">
+                    <label for="input-desc">Descrição Opcional</label>
+                    <input type="text" id="input-desc" placeholder="Ex: Repositórios">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" id="btn-close">Cancelar</button>
+                    <button type="submit" class="btn btn-submit">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Lista fixa inicial fornecida por você
+        const defaultLinks = [
+            { name: "Gmail", url: "https://mail.google.com", desc: "E-mail" },
+            { name: "Google Drive", url: "https://drive.google.com/drive/my-drive", desc: "Arquivos" },
+            { name: "Summarize.tech", url: "https://www.summarize.tech/", desc: "Resumos de vídeos" },
+            { name: "Calcular Porcentagem", url: "http://www.calcularporcentagem.com/", desc: "Calculadora" },
+            { name: "Invertexto", url: "https://www.invertexto.com/", desc: "Ferramentas úteis" },
+            { name: "Escola do Trabalhador 4.0", url: "https://ead.escoladotrabalhador40.com.br/#/", desc: "Plataforma de cursos" },
+            { name: "Upscale Media", url: "https://www.upscale.media/pt", desc: "Aumentar resolução" },
+            { name: "Lunapic", url: "https://www5.lunapic.com/editor/", desc: "Editor de imagens" },
+            { name: "123apps", url: "https://123apps.com/pt/", desc: "Ferramentas web" },
+            { name: "Excalidraw", url: "https://excalidraw.com/", desc: "Quadro de desenho" },
+            { name: "Future Tools", url: "https://futuretools.io/", desc: "Catálogo de IAs" },
+            { name: "Área do Condômino", url: "https://facilitegestao.superlogica.net/clients/areadocondomino/cobranca", desc: "Acesso e cobranças" }
+        ];
+
+        const grid = document.getElementById('links-grid');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const linkForm = document.getElementById('link-form');
+        const btnClose = document.getElementById('btn-close');
+
+        // Carrega links adicionais do localStorage
+        let customLinks = JSON.parse(localStorage.getItem('custom_dashboard_links')) || [];
+
+        function renderGrid() {
+            grid.innerHTML = '';
+
+            // 1. Renderiza os links padrões (não deletáveis)
+            defaultLinks.forEach(link => {
+                grid.appendChild(createCardElement(link, false));
+            });
+
+            // 2. Renderiza os links customizados (deletáveis)
+            customLinks.forEach((link, index) => {
+                grid.appendChild(createCardElement(link, true, index));
+            });
+
+            // 3. Renderiza o botão "+"
+            const addCard = document.createElement('button');
+            addCard.className = 'link-card add-card';
+            addCard.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <span>Adicionar</span>
+            `;
+            addCard.addEventListener('click', () => modalOverlay.classList.add('active'));
+            grid.appendChild(addCard);
+        }
+
+        function createCardElement(link, isCustom, index = null) {
+            const card = document.createElement('div');
+            card.className = 'position-relative';
+            
+            // Tratamento simples para gerar o endereço do logo via Google Favicon API
+            const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(link.url)}`;
+
+            let deleteButton = '';
+            if (isCustom) {
+                deleteButton = `<button class="btn-delete" data-index="${index}" title="Excluir">&times;</button>`;
+            }
+
+            card.innerHTML = `
+                <a href="${link.url}" class="link-card" target="_blank" rel="noopener noreferrer">
+                    <div class="icon-wrapper">
+                        <img src="${faviconUrl}" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23888\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z\'/></svg>';">
+                    </div>
+                    <div class="card-content">
+                        <span class="link-title">${link.name}</span>
+                        <span class="link-desc">${link.desc || link.url}</span>
+                    </div>
+                </a>
+                ${deleteButton}
+            `;
+
+            if (isCustom) {
+                card.querySelector('.btn-delete').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteLink(index);
+                });
+            }
+
+            return card;
+        }
+
+        function deleteLink(index) {
+            customLinks.splice(index, 1);
+            localStorage.setItem('custom_dashboard_links', JSON.parse(JSON.stringify(JSON.stringify(customLinks) === '[]' ? '[]' : JSON.stringify(customLinks))));
+            // Correção direta para salvar a array atualizada
+            localStorage.setItem('custom_dashboard_links', JSON.stringify(customLinks));
+            renderGrid();
+        }
+
+        linkForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let url = document.getElementById('input-url').value.trim();
+            
+            // Força o prefixo http/https se o usuário esquecer
+            if (!/^https?:\/\//i.test(url)) {
+                url = 'https://' + url;
+            }
+
+            const newLink = {
+                name: document.getElementById('input-name').value.trim(),
+                url: url,
+                desc: document.getElementById('input-desc').value.trim()
+            };
+
+            customLinks.push(newLink);
+            localStorage.setItem('custom_dashboard_links', JSON.stringify(customLinks));
+            
+            linkForm.reset();
+            modalOverlay.classList.remove('active');
+            renderGrid();
+        });
+
+        btnClose.addEventListener('click', () => {
+            linkForm.reset();
+            modalOverlay.classList.remove('active');
+        });
+
+        // Fecha o modal ao clicar fora dele
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                linkForm.reset();
+                modalOverlay.classList.remove('active');
+            }
+        });
+
+        // Inicializa o painel
+        renderGrid();
+    </script>
+</body>
+</html>
