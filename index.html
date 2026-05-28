@@ -309,7 +309,7 @@
             <h2>Adicionar Novo Atalho</h2>
             <form id="link-form">
                 <div class="form-group">
-                    <label purchasers for="input-name">Nome do Site</label>
+                    <label for="input-name">Nome do Site</label>
                     <input type="text" id="input-name" required placeholder="Ex: GitHub">
                 </div>
                 <div class="form-group">
@@ -329,7 +329,7 @@
     </div>
 
     <script>
-        const defaultLinks = [
+        const initialLinks = [
             { name: "Gmail", url: "https://mail.google.com", desc: "E-mail" },
             { name: "Google Drive", url: "https://drive.google.com/drive/my-drive", desc: "Arquivos" },
             { name: "Summarize.tech", url: "https://www.summarize.tech/", desc: "Resumos de vídeos" },
@@ -350,14 +350,19 @@
         const linkForm = document.getElementById('link-form');
         const btnClose = document.getElementById('btn-close');
 
-        // SEGURANÇA REFORÇADA: Se a memória local não existir OU estiver vazia (tamanho 0), força a gravação inicial
-        let storedData = localStorage.getItem('user_dashboard_links');
-        if (!storedData || storedData === "[]") {
-            localStorage.setItem('user_dashboard_links', JSON.stringify(defaultLinks));
-            storedData = JSON.stringify(defaultLinks);
+        // Mecanismo tolerante a falhas: se não houver dados válidos, carrega a lista padrão na hora
+        let savedLinks = [];
+        try {
+            const localData = localStorage.getItem('user_panel_links_v3');
+            if (localData && localData !== "[]") {
+                savedLinks = JSON.parse(localData);
+            } else {
+                savedLinks = [...initialLinks];
+                localStorage.setItem('user_panel_links_v3', JSON.stringify(savedLinks));
+            }
+        } catch (e) {
+            savedLinks = [...initialLinks];
         }
-
-        let savedLinks = JSON.parse(storedData);
 
         function renderGrid() {
             grid.innerHTML = '';
@@ -412,7 +417,7 @@
 
         function deleteLink(index) {
             savedLinks.splice(index, 1);
-            localStorage.setItem('user_dashboard_links', JSON.stringify(savedLinks));
+            localStorage.setItem('user_panel_links_v3', JSON.stringify(savedLinks));
             renderGrid();
         }
 
@@ -431,7 +436,7 @@
             };
 
             savedLinks.push(newLink);
-            localStorage.setItem('user_dashboard_links', JSON.stringify(savedLinks));
+            localStorage.setItem('user_panel_links_v3', JSON.stringify(savedLinks));
             
             linkForm.reset();
             modalOverlay.classList.remove('active');
