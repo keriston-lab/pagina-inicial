@@ -60,6 +60,11 @@
             width: 100%;
         }
 
+        .card-wrapper {
+            position: relative;
+            height: 76px;
+        }
+
         .link-card {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -71,8 +76,7 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-            position: relative;
-            height: 76px;
+            height: 100%;
             overflow: hidden;
         }
 
@@ -127,26 +131,31 @@
 
         .btn-delete {
             position: absolute;
-            top: 6px;
-            right: 8px;
-            background: none;
-            border: none;
+            top: 8px;
+            right: 10px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.9rem;
             display: none;
-            padding: 2px;
-            line-height: 1;
+            width: 20px;
+            height: 20px;
+            line-height: 16px;
+            text-align: center;
             z-index: 10;
-            transition: color 0.15s ease;
+            transition: all 0.15s ease;
         }
 
-        .link-card:hover .btn-delete {
+        .card-wrapper:hover .btn-delete {
             display: block;
         }
 
         .btn-delete:hover {
             color: var(--danger);
+            border-color: var(--danger);
+            background-color: rgba(239, 68, 110, 0.05);
         }
 
         .add-card {
@@ -156,12 +165,14 @@
             justify-content: center;
             gap: 0.5rem;
             color: var(--text-muted);
+            width: 100%;
         }
 
         .add-card:hover {
             border-color: var(--card-hover-border);
             color: var(--text-main);
             background: transparent;
+            transform: translateY(-2px);
         }
 
         .add-card svg {
@@ -290,11 +301,9 @@
         </header>
         
         <div class="grid" id="links-grid">
-            <!-- Renderizado dinamicamente via JS -->
-        </div>
+            </div>
     </div>
 
-    <!-- Modal para adicionar novos links -->
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
             <h2>Adicionar Novo Atalho</h2>
@@ -320,7 +329,7 @@
     </div>
 
     <script>
-        // Lista fixa inicial fornecida por você
+        // Carga inicial padrão de segurança
         const defaultLinks = [
             { name: "Gmail", url: "https://mail.google.com", desc: "E-mail" },
             { name: "Google Drive", url: "https://drive.google.com/drive/my-drive", desc: "Arquivos" },
@@ -333,7 +342,8 @@
             { name: "123apps", url: "https://123apps.com/pt/", desc: "Ferramentas web" },
             { name: "Excalidraw", url: "https://excalidraw.com/", desc: "Quadro de desenho" },
             { name: "Future Tools", url: "https://futuretools.io/", desc: "Catálogo de IAs" },
-            { name: "Área do Condômino", url: "https://facilitegestao.superlogica.net/clients/areadocondomino/cobranca", desc: "Acesso e cobranças" }
+            { name: "Área do Condômino", url: "https://facilitegestao.superlogica.net/clients/areadocondomino/cobranca", desc: "Acesso e cobranças" },
+            { name: "GitHub", url: "https://github.com", desc: "Sites Pessoais" }
         ];
 
         const grid = document.getElementById('links-grid');
@@ -341,23 +351,25 @@
         const linkForm = document.getElementById('link-form');
         const btnClose = document.getElementById('btn-close');
 
-        // Carrega links adicionais do localStorage
-        let customLinks = JSON.parse(localStorage.getItem('custom_dashboard_links')) || [];
+        // Se for a primeira vez abrindo o site, joga a lista padrão para a memória limpa do navegador
+        if (!localStorage.getItem('user_dashboard_links')) {
+            localStorage.setItem('user_dashboard_links', JSON.stringify(defaultLinks));
+        }
+
+        let savedLinks = JSON.parse(localStorage.getItem('user_dashboard_links'));
 
         function renderGrid() {
             grid.innerHTML = '';
 
-            // 1. Renderiza os links padrões (não deletáveis)
-            defaultLinks.forEach(link => {
-                grid.appendChild(createCardElement(link, false));
+            // Renderiza todos os links salvos (agora todos são deletáveis)
+            savedLinks.forEach((link, index) => {
+                grid.appendChild(createCardElement(link, index));
             });
 
-            // 2. Renderiza os links customizados (deletáveis)
-            customLinks.forEach((link, index) => {
-                grid.appendChild(createCardElement(link, true, index));
-            });
-
-            // 3. Renderiza o botão "+"
+            // Renderiza o botão de Adicionar
+            const addCardWrapper = document.createElement('div');
+            addCardWrapper.className = 'card-wrapper';
+            
             const addCard = document.createElement('button');
             addCard.className = 'link-card add-card';
             addCard.innerHTML = `
@@ -367,50 +379,41 @@
                 <span>Adicionar</span>
             `;
             addCard.addEventListener('click', () => modalOverlay.classList.add('active'));
-            grid.appendChild(addCard);
+            addCardWrapper.appendChild(addCard);
+            grid.appendChild(addCardWrapper);
         }
 
-        function createCardElement(link, isCustom, index = null) {
-            const card = document.createElement('div');
-            card.className = 'position-relative';
+        function createCardElement(link, index) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card-wrapper';
             
-            // Tratamento simples para gerar o endereço do logo via Google Favicon API
             const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(link.url)}`;
 
-            let deleteButton = '';
-            if (isCustom) {
-                deleteButton = `<button class="btn-delete" data-index="${index}" title="Excluir">&times;</button>`;
-            }
-
-            card.innerHTML = `
+            wrapper.innerHTML = `
                 <a href="${link.url}" class="link-card" target="_blank" rel="noopener noreferrer">
                     <div class="icon-wrapper">
-                        <img src="${faviconUrl}" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23888\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z\'/></svg>';">
+                        <img src="${faviconUrl}" alt="" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'%23888\\'><path d=\\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z\\'/></svg>';">
                     </div>
                     <div class="card-content">
                         <span class="link-title">${link.name}</span>
                         <span class="link-desc">${link.desc || link.url}</span>
                     </div>
                 </a>
-                ${deleteButton}
+                <button class="btn-delete" data-index="${index}" title="Excluir">&times;</button>
             `;
 
-            if (isCustom) {
-                card.querySelector('.btn-delete').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    deleteLink(index);
-                });
-            }
+            wrapper.querySelector('.btn-delete').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteLink(index);
+            });
 
-            return card;
+            return wrapper;
         }
 
         function deleteLink(index) {
-            customLinks.splice(index, 1);
-            localStorage.setItem('custom_dashboard_links', JSON.parse(JSON.stringify(JSON.stringify(customLinks) === '[]' ? '[]' : JSON.stringify(customLinks))));
-            // Correção direta para salvar a array atualizada
-            localStorage.setItem('custom_dashboard_links', JSON.stringify(customLinks));
+            savedLinks.splice(index, 1);
+            localStorage.setItem('user_dashboard_links', JSON.stringify(savedLinks));
             renderGrid();
         }
 
@@ -418,8 +421,7 @@
             e.preventDefault();
             let url = document.getElementById('input-url').value.trim();
             
-            // Força o prefixo http/https se o usuário esquecer
-            if (!/^https?:\/\//i.test(url)) {
+            if (!/^https?:\\/\\//i.test(url)) {
                 url = 'https://' + url;
             }
 
@@ -429,8 +431,8 @@
                 desc: document.getElementById('input-desc').value.trim()
             };
 
-            customLinks.push(newLink);
-            localStorage.setItem('custom_dashboard_links', JSON.stringify(customLinks));
+            savedLinks.push(newLink);
+            localStorage.setItem('user_dashboard_links', JSON.stringify(savedLinks));
             
             linkForm.reset();
             modalOverlay.classList.remove('active');
@@ -442,7 +444,6 @@
             modalOverlay.classList.remove('active');
         });
 
-        // Fecha o modal ao clicar fora dele
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
                 linkForm.reset();
@@ -450,7 +451,6 @@
             }
         });
 
-        // Inicializa o painel
         renderGrid();
     </script>
 </body>
