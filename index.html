@@ -329,7 +329,6 @@
     </div>
 
     <script>
-        // Carga inicial padrão de segurança
         const defaultLinks = [
             { name: "Gmail", url: "https://mail.google.com", desc: "E-mail" },
             { name: "Google Drive", url: "https://drive.google.com/drive/my-drive", desc: "Arquivos" },
@@ -351,22 +350,22 @@
         const linkForm = document.getElementById('link-form');
         const btnClose = document.getElementById('btn-close');
 
-        // Se for a primeira vez abrindo o site, joga a lista padrão para a memória limpa do navegador
-        if (!localStorage.getItem('user_dashboard_links')) {
+        // SEGURANÇA REFORÇADA: Se a memória local não existir OU estiver vazia (tamanho 0), força a gravação inicial
+        let storedData = localStorage.getItem('user_dashboard_links');
+        if (!storedData || storedData === "[]") {
             localStorage.setItem('user_dashboard_links', JSON.stringify(defaultLinks));
+            storedData = JSON.stringify(defaultLinks);
         }
 
-        let savedLinks = JSON.parse(localStorage.getItem('user_dashboard_links'));
+        let savedLinks = JSON.parse(storedData);
 
         function renderGrid() {
             grid.innerHTML = '';
 
-            // Renderiza todos os links salvos (agora todos são deletáveis)
             savedLinks.forEach((link, index) => {
                 grid.appendChild(createCardElement(link, index));
             });
 
-            // Renderiza o botão de Adicionar
             const addCardWrapper = document.createElement('div');
             addCardWrapper.className = 'card-wrapper';
             
