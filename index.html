@@ -425,7 +425,8 @@
             e.preventDefault();
             let url = document.getElementById('input-url').value.trim();
             
-            if (!/^https?:\\/\\//i.test(url)) {
+            // Verificação de URL segura e sem caracteres especiais (regex)
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
 
