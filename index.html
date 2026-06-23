@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,11 +39,13 @@
         .container {
             width: 100%;
             max-width: 1000px;
+            position: relative;
         }
 
         header {
             text-align: center;
             margin-bottom: 3rem;
+            position: relative;
         }
 
         header h1 {
@@ -51,6 +54,45 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 400;
+        }
+
+        /* Container de Backup Minimalista */
+        .backup-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-backup {
+            background-color: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .btn-backup:hover {
+            border-color: var(--card-hover-border);
+            color: var(--text-main);
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-backup svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
+        }
+
+        #file-input {
+            display: none;
         }
 
         .grid {
@@ -291,17 +333,47 @@
         .btn-submit:hover {
             background-color: #ffffff;
         }
+
+        /* Responsividade para botões de backup em telas menores */
+        @media (max-width: 600px) {
+            header {
+                margin-top: 2rem;
+            }
+
+            .backup-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div class="container">
         <header>
             <h1>Painel de Navegação</h1>
-        </header>
-        
-        <div class="grid" id="links-grid">
+            <div class="backup-controls">
+                <button class="btn-backup" id="btn-export" title="Salvar arquivo com seus links">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" />
+                    </svg>
+                    Exportar
+                </button>
+                <button class="btn-backup" id="btn-import-trigger" title="Carregar arquivo de links">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                    </svg>
+                    Importar
+                </button>
+                <input type="file" id="file-input" accept=".json">
             </div>
+        </header>
+
+        <div class="grid" id="links-grid"></div>
     </div>
 
     <div class="modal-overlay" id="modal-overlay">
@@ -350,7 +422,10 @@
         const linkForm = document.getElementById('link-form');
         const btnClose = document.getElementById('btn-close');
 
-        // Mecanismo tolerante a falhas: se não houver dados válidos, carrega a lista padrão na hora
+        const btnExport = document.getElementById('btn-export');
+        const btnImportTrigger = document.getElementById('btn-import-trigger');
+        const fileInput = document.getElementById('file-input');
+
         let savedLinks = [];
         try {
             const localData = localStorage.getItem('user_panel_links_v3');
@@ -373,7 +448,7 @@
 
             const addCardWrapper = document.createElement('div');
             addCardWrapper.className = 'card-wrapper';
-            
+
             const addCard = document.createElement('button');
             addCard.className = 'link-card add-card';
             addCard.innerHTML = `
@@ -390,7 +465,7 @@
         function createCardElement(link, index) {
             const wrapper = document.createElement('div');
             wrapper.className = 'card-wrapper';
-            
+
             const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(link.url)}`;
 
             wrapper.innerHTML = `
@@ -424,8 +499,7 @@
         linkForm.addEventListener('submit', (e) => {
             e.preventDefault();
             let url = document.getElementById('input-url').value.trim();
-            
-            // Verificação de URL segura e sem caracteres especiais (regex)
+
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 url = 'https://' + url;
             }
@@ -438,7 +512,7 @@
 
             savedLinks.push(newLink);
             localStorage.setItem('user_panel_links_v3', JSON.stringify(savedLinks));
-            
+
             linkForm.reset();
             modalOverlay.classList.remove('active');
             renderGrid();
@@ -456,7 +530,48 @@
             }
         });
 
+        // MECANISMO DE EXPORTAR DATA (BACKUP)
+        btnExport.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedLinks, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "backup-painel.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        // MECANISMO DE IMPORTAR DATA
+        btnImportTrigger.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        savedLinks = importedData;
+                        localStorage.setItem('user_panel_links_v3', JSON.stringify(savedLinks));
+                        renderGrid();
+                        alert('Backup importado com sucesso!');
+                    } else {
+                        alert('Formato de arquivo inválido.');
+                    }
+                } catch (err) {
+                    alert('Erro ao ler o arquivo de backup.');
+                }
+            };
+            reader.readAsText(file);
+            fileInput.value = ''; // Limpa o input para permitir re-upload se necessário
+        });
+
         renderGrid();
     </script>
 </body>
+
 </html>
